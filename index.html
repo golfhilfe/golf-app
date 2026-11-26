@@ -628,6 +628,17 @@ function mountHcp(){const el=$('#hcpEntry');if(!el)return;const cur=hcpThisMonth
   hcpEntry(el,{month:new Date(),has:!!cur,val:cur?Number(cur.handicap):null,save:async v=>{const row={client_id:S.me.id,month:monthKey(new Date()),handicap:v};await q(sb.from('handicap_logs').upsert(row));
     D.hl=[...(D.hl||[]).filter(r=>r.month!==row.month),row].sort((a,b)=>a.month.localeCompare(b.month));S.me.handicap=v;render(true)}})}
 function mountClubs(){const sp=$('#speedBox');if(sp)speedBox(sp,{rows:D.speed||[],...speedIO(S.me.id),done:r=>{D.speed=r.map(x=>({...x}))}});const el=$('#clubBox');if(el)clubBox(el,{rows:D.clubs||[],...clubIO(S.me.id),done:b=>{D.clubs=b.map(r=>({...r}))}})}
+function pendingCard(){const P=D.pending||[];if(!P.length)return'';const de=L==='de';
+  return`<div class="card lapsed"><div class="row between"><b>👋 ${de?'Neue Anmeldungen':'New sign-ups'}</b><span class="pill">${P.length}</span></div><p class="sm mute" style="margin:4px 0 6px">${de?'Diese Personen haben sich registriert. Erst nach deiner Freigabe können sie buchen und die App nutzen.':'These people signed up. They can book and use the app once you approve them.'}</p>
+  ${P.map(c=>`<div class="lrow"><b>${esc(c.full_name||'–')}</b><div class="sm mute">${c.phone?esc(c.phone)+' · ':''}${de?'registriert':'signed up'} ${dshort(new Date(c.created_at))}</div>
+   <div class="contact"><button class="btn" style="width:auto;padding:8px 16px;min-height:38px" data-approve="${c.id}">✓ ${de?'Freigeben':'Approve'}</button><button class="btn ghost" style="width:auto;padding:8px 16px;min-height:38px" data-decline="${c.id}">${de?'Ablehnen':'Decline'}</button></div></div>`).join('')}</div>`}
+async function decidePending(id,ok){const c=(D.pending||[]).find(x=>x.id===id);try{await q(sb.from('profiles').update(ok?{approved:true}:{declined:true}).eq('id',id));await loadCoach();render(true);
+  toast(ok?(L==='de'?`${c?.full_name||''} freigegeben`:`${c?.full_name||''} approved`):(L==='de'?'Anmeldung abgelehnt':'Sign-up declined'))}catch(e){fail(e)}}
+function renderPending(){chrome();$('#tabs').hidden=true;const de=L==='de';const declined=S.me.declined;
+  view.innerHTML=`<div class="card" style="margin-top:24px;text-align:center"><div style="font-size:40px">${declined?'🔒':'⛳'}</div><h2 style="margin:8px 0">${declined?(de?'Kein Zugang':'No access'):(de?'Fast geschafft!':'Almost there!')}</h2>
+  <p class="mute">${declined?(de?'Dein Konto wurde nicht freigegeben. Bei Fragen melde dich bitte direkt bei Martin.':'Your account was not approved. Please contact Martin directly with any questions.'):(de?'Danke für deine Anmeldung. Martin prüft sie und gibt dein Konto frei. Danach kannst du Stunden buchen und deinen Trainingsplan sehen.':'Thanks for signing up. Martin will check it and approve your account. Then you can book lessons and see your training plan.')}</p>
+  ${declined?'':`<button class="btn" id="pendRe" style="margin-top:12px">${de?'Nochmal prüfen':'Check again'}</button>`}<button class="btn ghost" id="pendOut" style="margin-top:8px">${t('logout')}</button></div>`;
+  const r=$('#pendRe');if(r)r.onclick=()=>boot();$('#pendOut').onclick=()=>sb.auth.signOut()}
 function lapsedList(){return D.lapsed||[]}
 function lapsedCard(){const L2=lapsedList();if(!L2.length)return'';
   return`<div class="card lapsed"><div class="row between"><b>🔔 ${t('lapsedT')}</b><span class="pill">${L2.length}</span></div><p class="sm mute" style="margin:4px 0 6px">${t('lapsedHint')}</p>
@@ -757,7 +768,7 @@ async function loadCoach(){
     q(sb.from('group_signups').select('*,profiles(full_name,phone)')),
     q(sb.from('camp_registrations').select('*,profiles(full_name,phone)')),
     D.drills?Promise.resolve(D.drills):q(sb.from('drills').select('*').order('sort'))]);
-  Object.assign(D,{blocks,cbk:bk,clients:cl,cad:ad,gs,su,ccr:cr,drills});
+  D.pending=cl.filter(c=>c.approved===false&&!c.declined);Object.assign(D,{blocks,cbk:bk,clients:cl.filter(c=>c.approved!==false),cad:ad,gs,su,ccr:cr,drills});
   if(!S.lib.client&&cl.length)S.lib.client=cl[0].id;
 }
 async function refresh(){
@@ -773,7 +784,7 @@ function chrome(){
   auth.hidden=true;view.hidden=false;$('#tabs').hidden=false;$('#avBtn').hidden=false;
   const keys=S.coach?['home','clients','book','plan','trips']:['home','book','plan','progress','trips'];
   const labels=S.coach?t('ctabs'):t('tabs');
-  const nLap=S.coach?lapsedList().length:0;$('#tabs').innerHTML=keys.map((k,j)=>`<button data-tab="${k}" ${S.tab===k?'aria-current="page"':''}><svg viewBox="0 0 24 24">${icons[k]}</svg>${labels[j]}${k==='home'&&nLap?`<i class="tabbadge">${nLap}</i>`:''}</button>`).join('');
+  const nLap=S.coach?lapsedList().length+(D.pending||[]).length:0;$('#tabs').innerHTML=keys.map((k,j)=>`<button data-tab="${k}" ${S.tab===k?'aria-current="page"':''}><svg viewBox="0 0 24 24">${icons[k]}</svg>${labels[j]}${k==='home'&&nLap?`<i class="tabbadge">${nLap}</i>`:''}</button>`).join('');
   $('#coachbar').innerHTML=S.coach?'<div class="coachbar">'+t('coachView')+' · '+esc(S.me.full_name||BRAND.coach)+'</div>':'';
   $('#avBtn span').textContent=ini(S.me.full_name);
 }
@@ -907,7 +918,7 @@ const C={
 home(){
   const now=new Date();const today=(D.cbk||[]).filter(b=>new Date(b.starts_at).toDateString()===now.toDateString());
   const wk=(D.cbk||[]).filter(b=>new Date(b.starts_at)<new Date(Date.now()+7*864e5));
-  view.innerHTML=`<h2>${t('today')}, ${dlabel(now)}</h2>${lapsedCard()}
+  view.innerHTML=`<h2>${t('today')}, ${dlabel(now)}</h2>${pendingCard()}${lapsedCard()}
   <div class="list">${today.map(b=>bkRow(b,true)).join('')||`<div class="empty">${t('noBookings')}</div>`}</div>
   <div class="stats" style="margin-top:14px"><div class="stat"><span class="sm mute">${t('lessonsWeek')}</span><b>${wk.length}</b></div><div class="stat"><span class="sm mute">${t('clientsN')}</span><b>${(D.clients||[]).length}</b></div></div>
   <h3>${t('upcoming')}</h3>${dayGroups((D.cbk||[]).filter(b=>new Date(b.starts_at).toDateString()!==now.toDateString()).slice(0,12))}`;
@@ -1046,6 +1057,8 @@ view.addEventListener('click',async e=>{
   else if(d.client){clientSheet(d.client).catch(fail)}
   else if(d.note){noteSheet(d.note)}
   else if(d.snooze){snoozeClient(d.snooze)}
+  else if(d.approve){decidePending(d.approve,true)}
+  else if(d.decline){decidePending(d.decline,false)}
   else if(d.cday){S.cday=+d.cday;render(true)}
   else if(d.block){b.disabled=true;const st=new Date(d.block);await q(sb.from('blocks').insert({academy_id:S.me.academy_id,starts_at:st.toISOString(),ends_at:new Date(st.getTime()+36e5).toISOString()}));toast(t('slotBlocked'));await loadCoach();render(true)}
   else if(d.unblock){b.disabled=true;await q(sb.from('blocks').delete().eq('id',d.unblock));toast(t('slotFreed'));await loadCoach();render(true)}
@@ -1084,6 +1097,7 @@ view.addEventListener('submit',async e=>{e.preventDefault();const fm=e.target;co
 async function boot(){
   try{await loadMe()}catch(e){S.me=null}
   if(!S.me){chrome();renderAuth();return}
+  if(!S.coach&&(S.me.approved===false||S.me.declined)){renderPending();return}
   S.tab='home';await go('home');checkBadges();
 }
 sb.auth.onAuthStateChange((ev)=>{if(ev==='SIGNED_IN'||ev==='SIGNED_OUT')setTimeout(boot,0)});
