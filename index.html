@@ -816,7 +816,7 @@ async function loadCoach(){
     q(sb.from('group_signups').select('*,profiles(full_name,phone)')),
     q(sb.from('camp_registrations').select('*,profiles(full_name,phone)')),
     D.drills?Promise.resolve(D.drills):q(sb.from('drills').select('*').order('sort'))]);
-  D.pending=cl.filter(c=>c.approved===false&&!c.declined);Object.assign(D,{blocks,cbk:bk,clients:cl.filter(c=>c.approved!==false),cad:ad,gs,su,ccr:cr,drills});
+  D.pending=cl.filter(c=>c.approved===false&&!c.declined);D.blockedCl=cl.filter(c=>c.declined&&c.approved===false&&!D.pending.includes(c));Object.assign(D,{blocks,cbk:bk,clients:cl.filter(c=>c.approved!==false),cad:ad,gs,su,ccr:cr,drills});
   if(!S.lib.client&&cl.length)S.lib.client=cl[0].id;
 }
 async function refresh(){
@@ -886,18 +886,21 @@ book(){
       <div class="row between"><span class="sm">${mine?(mine.waitlist?t('onWait'):t('inGroup')):left===0?t('full'):t('left')(left,g.capacity)}</span><button class="btn ${mine?'ghost':''}" style="width:auto;padding:9px 16px;min-height:40px" data-join="${g.id}" data-mine="${mine?1:0}">${mine?t('leave'):left===0?t('waitlist'):t('join')}</button></div></div>`}).join('')||`<div class="empty">${t('noGroups')}</div>`}</div>`;
     return;
   }
-  const days=[...Array(10)].map((_,k)=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+k);return d});
+  const days=[...Array(22)].map((_,k)=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+k);return d});
   if(S.day>=days.length)S.day=0;
   const lt=D.lt.find(x=>x.id===S.lt)||D.lt[0];const day=days[S.day];const off=!openFor(day).length;
   const taken=(D.taken||[]).map(x=>[new Date(x.starts_at).getTime(),new Date(x.starts_at).getTime()+x.minutes*6e4]);
   const openH=openFor(day);const span=Math.ceil(lt.minutes/60);const allOpen=s=>{const h=+s.slice(0,2),m=s.slice(2);for(let i=1;i<span;i++)if(!openH.includes(String(h+i).padStart(2,'0')+m))return false;return true};
-  const slots=openH.filter(allOpen).map(s=>{const st=atTime(day,s);const a=st.getTime(),b=a+lt.minutes*6e4;return{s,iso:st.toISOString(),taken:a<Date.now()+2*36e5||taken.some(([x,y])=>a<y&&x<b)}});
+  const wkUsed=weekMinutes(day),overWk=wkUsed+lt.minutes>WEEK_MAX;
+  const slots=openH.filter(allOpen).map(s=>{const st=atTime(day,s);const a=st.getTime(),b=a+lt.minutes*6e4;return{s,iso:st.toISOString(),taken:overWk||a<Date.now()+2*36e5||taken.some(([x,y])=>a<y&&x<b)}});
   view.innerHTML=`<h2>${t('book')}</h2>${seg}
   <div class="opt">${D.lt.map(x=>`<button data-lt="${x.id}" aria-pressed="${x.id===lt.id}"><b>${x.minutes>=120?esc(f(x,'name')):x.minutes+(L==='de'?' Min.':' min')}</b><span>${esc(f(x,'note'))} · ${money(x.price_cents)}</span></button>`).join('')}</div>
   <div class="days" style="grid-template-columns:repeat(${days.length},minmax(44px,1fr));overflow-x:auto">${days.map((d,k)=>`<button data-day="${k}" aria-pressed="${S.day===k}" ${openFor(d).length?'':'disabled'}><span>${wd(d)}</span><b>${d.getDate()}</b></button>`).join('')}</div>
   <div class="row between sm" style="margin-bottom:8px"><b style="white-space:nowrap">${dlabel(day)}</b></div>
+  ${!off&&overWk?`<div class="card lapsed sm" style="margin:0 0 10px">${L==='de'?`In dieser Woche hast du schon ${hrs(wkUsed/60)} Std. gebucht. Pro Woche sind maximal 3 Stunden möglich.`:`You already have ${hrs(wkUsed/60)} h booked this week. The maximum is 3 hours per week.`}</div>`:''}
   ${off?`<p class="mute">${t('off')}</p>`:`<div class="slots">${slots.map(s=>`<button data-slot="${s.iso}" aria-pressed="${S.slot===s.iso}" ${s.taken?'disabled':''}>${s.s}</button>`).join('')}</div>`}
   <button class="btn" id="bookBtn" ${S.slot?'':'disabled'}>${S.slot?t('bookAt')(tm(new Date(S.slot)),money(lt.price_cents)):t('choose')}</button>
+  <p class="sm mute" style="margin-top:8px;text-align:center">${L==='de'?'Buchbar bis 3 Wochen im Voraus · max. 3 Std. pro Woche · kostenlose Stornierung bis 24 Std. vorher':'Book up to 3 weeks ahead · max. 3 h per week · free cancellation up to 24 h before'}</p>
   <h3>${t('yours')}</h3><div class="list">${(D.bk||[]).map(b=>{const d=new Date(b.starts_at);const can=d-Date.now()>24*36e5;return`<div class="card row between" style="margin:0"><div><b>${dlabel(d)}, ${tm(d)} ${t('at')}</b><div class="sm mute">${esc(f(b.lesson_types,'name'))} · ${b.lesson_types.minutes} ${L==='de'?'Min.':'min'}</div></div>${can?`<button class="pill" style="border:0" data-cancel="${b.id}">${t('cancel')}</button>`:`<span class="sm mute" style="max-width:110px;text-align:right">${t('noCancel')}</span>`}</div>`}).join('')||`<p class="mute">${t('none')}</p>`}</div>
   <p class="sm mute">${t('policy')}</p>`;
 },
@@ -974,7 +977,8 @@ home(){
 clients(){
   const cl=D.clients||[];
   view.innerHTML=`<h2>${t('clients')}</h2>${cl.map(c=>{const a=(D.cad||[]).filter(x=>x.client_id===c.id);const open=a.filter(x=>!x.done_at).length;const p=a.length?Math.round((a.length-open)/a.length*100):0;
-   return`<div class="client" data-client="${c.id}" style="cursor:pointer"><span class="av">${esc(ini(c.full_name))}</span><div><b>${esc(c.full_name)}</b><div class="sm mute">HCP ${num(c.handicap)} · ${esc(c.phone)}</div>${a.length?`<div class="bar" style="margin-top:6px;height:5px"><i style="width:${p}%"></i></div>`:''}</div><span class="sm mute">${a.length?p+' %':''}</span></div>`}).join('')||`<div class="empty">${t('noClients')}</div>`}`;
+   return`<div class="client" data-client="${c.id}" style="cursor:pointer"><span class="av">${esc(ini(c.full_name))}</span><div><b>${esc(c.full_name)}</b><div class="sm mute">HCP ${num(c.handicap)} · ${esc(c.phone)}</div>${a.length?`<div class="bar" style="margin-top:6px;height:5px"><i style="width:${p}%"></i></div>`:''}</div><span class="sm mute">${a.length?p+' %':''}</span></div>`}).join('')||`<div class="empty">${t('noClients')}</div>`}
+  ${(D.blockedCl||[]).length?`<h3 style="margin-top:22px">${L==='de'?'Gesperrt':'Blocked'}</h3>${D.blockedCl.map(c=>`<div class="client"><span class="av" style="opacity:.5">${esc(ini(c.full_name))}</span><div><b>${esc(c.full_name)}</b><div class="sm mute">${esc(c.phone||'')}</div></div><button class="pill" style="border:0;cursor:pointer;margin-left:auto" data-unblock="${c.id}">${L==='de'?'Entsperren':'Unblock'}</button></div>`).join('')}`:''}`;
 },
 book(){
   const gs=D.gs||[];
@@ -1046,9 +1050,12 @@ async function clientSheet(id){
    <h3 style="margin:16px 0 6px">${ct('clubsT')}</h3><div id="cClubs"></div>
    <h3 style="margin:16px 0 6px">${t('sentNotes')}</h3>${nts.map(n=>`<div class="kv"><span>${esc(n.body)}</span><span class="mute sm" style="white-space:nowrap">${dshort(new Date(n.created_at))}${n.read_at?' ✓':''}</span></div>`).join('')||`<p class="mute sm">–</p>`}
    <button class="btn" data-note="${c.id}" style="margin-top:14px">${t('sendNote')}</button>
-   <button class="btn ghost" data-close style="margin-top:8px">${t('close')}</button>`);
+   <button class="btn ghost" data-close style="margin-top:8px">${t('close')}</button>
+   <button class="linkbtn" id="blockBtn" style="color:#b3261e">${L==='de'?'Schüler sperren':'Block student'}</button>`);
   speedBox(s.querySelector('#cSpeed'),{rows:sps,...speedIO(id)});
   clubBox(s.querySelector('#cClubs'),{rows:cls,...clubIO(id)});
+  const bb=s.querySelector('#blockBtn');if(bb)bb.onclick=async()=>{const de=L==='de';if(!bb.dataset.sure){bb.dataset.sure=1;bb.textContent=de?`Wirklich sperren? ${c.full_name} verliert den Zugang, alle kommenden Stunden werden storniert. Nochmal tippen.`:`Really block? ${c.full_name} loses access and all upcoming lessons are cancelled. Tap again.`;return}
+    bb.disabled=true;try{await q(sb.rpc('set_client_blocked',{p_client:c.id,p_block:true}));s.remove();toast(de?`${c.full_name} gesperrt`:`${c.full_name} blocked`);await loadCoach();render(true)}catch(err){bb.disabled=false;fail(err)}};
   s.addEventListener('click',async e=>{const nb=e.target.closest('[data-note]');if(nb){s.remove();noteSheet(nb.dataset.note);return}const b=e.target.closest('[data-unassign]');if(!b)return;try{await q(sb.from('assigned_drills').delete().eq('id',b.dataset.unassign));b.closest('.kv').remove();await loadCoach()}catch(err){fail(err)}});
 }
 function weekSheet(){
@@ -1081,7 +1088,12 @@ $('#avBtn').onclick=profileSheet;
 auth.addEventListener('click',e=>{const b=e.target.closest('[data-am]');if(b){S.authMode=b.dataset.am;renderAuth()}});
 auth.addEventListener('submit',e=>{e.preventDefault();if(e.target.id==='authForm')submitAuth().catch(fail)});
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b)go(b.dataset.tab)});
-async function loadTaken(){const days=new Date();days.setHours(0,0,0,0);D.taken=await q(sb.rpc('taken_slots',{from_ts:days.toISOString(),to_ts:new Date(days.getTime()+11*864e5).toISOString()}))}
+const WEEK_MAX=180;
+function monStart(d){const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x}
+function weekMinutes(day){const a=monStart(day).getTime(),b=a+7*864e5;return (D.bk||[]).filter(x=>{const t2=new Date(x.starts_at).getTime();return t2>=a&&t2<b}).reduce((n,x)=>n+(x.lesson_types?.minutes||0),0)}
+const BOOK_ERR={BOOK_TOO_FAR:{de:'Buchungen sind maximal 3 Wochen im Voraus möglich.',en:'You can book at most 3 weeks ahead.'},BOOK_WEEK_LIMIT:{de:'Pro Woche sind maximal 3 Stunden möglich.',en:'The maximum is 3 hours per week.'},BOOK_NO_CHANGE:{de:'Stornierung nur bis 24 Std. vorher möglich.',en:'You can only cancel up to 24 hours before.'}};
+const bookErr=e=>{const k=Object.keys(BOOK_ERR).find(k=>String(e?.message||'').includes(k));return k?BOOK_ERR[k][L]:null};
+async function loadTaken(){const days=new Date();days.setHours(0,0,0,0);D.taken=await q(sb.rpc('taken_slots',{from_ts:days.toISOString(),to_ts:new Date(days.getTime()+23*864e5).toISOString()}))}
 view.addEventListener('click',async e=>{
   const b=e.target.closest('button,[data-go],[data-client]');if(!b)return;const d=b.dataset;
   try{
@@ -1092,9 +1104,9 @@ view.addEventListener('click',async e=>{
   else if(d.slot){S.slot=d.slot;render(true)}
   else if(b.id==='bookBtn'&&S.slot){b.disabled=true;const lt=D.lt.find(x=>x.id===S.lt);
     const {error}=await sb.from('bookings').insert({academy_id:S.me.academy_id,client_id:S.me.id,lesson_type_id:lt.id,starts_at:S.slot});
-    if(error){toast(error.code==='23505'?t('slotGone'):t('genericErr'));await loadTaken();S.slot=null;render(true);return}
+    if(error){toast(error.code==='23505'?t('slotGone'):(bookErr(error)||t('genericErr')));await loadTaken();S.slot=null;render(true);return}
     const st=new Date(S.slot);S.slot=null;toast(t('booked')(dlabel(st),tm(st)));await refresh();await loadTaken();render(true)}
-  else if(d.cancel){b.disabled=true;await q(sb.from('bookings').update({status:'cancelled'}).eq('id',d.cancel));toast(t('cancelled'));await refresh();await loadTaken();render(true)}
+  else if(d.cancel){b.disabled=true;{const {error}=await sb.from('bookings').update({status:'cancelled'}).eq('id',d.cancel);if(error){b.disabled=false;toast(bookErr(error)||t('genericErr'));return}}toast(t('cancelled'));await refresh();await loadTaken();render(true)}
   else if(d.join){b.disabled=true;if(d.mine==='1'){await q(sb.from('group_signups').delete().eq('session_id',d.join).eq('client_id',S.me.id));toast(t('leftG'))}else{const wl=await q(sb.rpc('join_group',{p_session:d.join}));toast(wl?t('waitAdded'):t('joined'))}await refresh();render(true)}
   else if(d.ptab){S.ptab=d.ptab;render(true)}
   else if(d.addself){b.disabled=true;await q(sb.from('assigned_drills').insert({client_id:S.me.id,drill_id:d.addself,self_added:true}));toast(L==='de'?'Zu deinem Plan hinzugefügt':'Added to your plan');await loadClient();render(true)}
@@ -1106,6 +1118,7 @@ view.addEventListener('click',async e=>{
   else if(d.note){noteSheet(d.note)}
   else if(d.snooze){snoozeClient(d.snooze)}
   else if(d.approve){decidePending(d.approve,true)}
+  else if(d.unblock){b.disabled=true;await q(sb.rpc('set_client_blocked',{p_client:d.unblock,p_block:false}));toast(L==='de'?'Wieder freigegeben':'Unblocked');await loadCoach();render(true)}
   else if(d.decline){decidePending(d.decline,false)}
   else if(d.cday){S.cday=+d.cday;render(true)}
   else if(d.block){b.disabled=true;const st=new Date(d.block);await q(sb.from('blocks').insert({academy_id:S.me.academy_id,starts_at:st.toISOString(),ends_at:new Date(st.getTime()+36e5).toISOString()}));toast(t('slotBlocked'));await loadCoach();render(true)}
