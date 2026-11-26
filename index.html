@@ -219,6 +219,7 @@ input,select,textarea,input[type=number]{font-size:16px!important}
  .opt span{font-size:11.5px}
  h2{font-size:24px}
 }
+.linkbtn{display:block;margin:14px auto 0;background:none;border:0;color:var(--ink);text-decoration:underline;font:500 15px Inter,system-ui,sans-serif;cursor:pointer;padding:6px}
 </style>
 </head><body>
 <div class="shell"><div class="app" id="app">
@@ -265,7 +266,7 @@ const waLink=p=>'https://wa.me/'+digits(p).replace(/^\+/,'').replace(/^00/,'');
 const T={
 de:{tabs:['Start','Buchen','Plan','Fortschritt','Reisen'],ctabs:['Heute','Schüler','Kalender','Pläne','Camps'],coachView:'Coach-Ansicht',
  login:'Anmelden',signup:'Registrieren',welcome:'Willkommen',welcomeSub:'Buche Stunden, trainiere mit deinem Plan und verfolge deinen Fortschritt.',name:'Vor- und Nachname',phone:'Handynummer',club:'Heimatclub (optional)',email:'E-Mail',password:'Passwort (mind. 8 Zeichen)',
- consent:'Ich bin einverstanden, dass Martin Stanic meinen Namen, meine Handynummer und E-Mail speichert, um mich zu Training und Buchungen zu kontaktieren. Widerruf jederzeit per Nachricht möglich.',needConsent:'Bitte bestätige die Einwilligung.',confirmMail:'Fast geschafft: Wir haben dir eine E-Mail geschickt. Bitte bestätige deine Adresse und melde dich dann an.',badLogin:'E-Mail oder Passwort stimmt nicht.',genericErr:'Das hat nicht geklappt. Bitte versuch es noch einmal.',logout:'Abmelden',loading:'Lädt …',
+ consent:'Ich bin einverstanden, dass Martin Stanic meinen Namen, meine Handynummer und E-Mail speichert, um mich zu Training und Buchungen zu kontaktieren. Widerruf jederzeit per Nachricht möglich.',needConsent:'Bitte bestätige die Einwilligung.',confirmMail:'Fast geschafft: Wir haben dir eine E-Mail geschickt. Bitte bestätige deine Adresse und melde dich dann an.',badLogin:'E-Mail oder Passwort stimmt nicht. Passwort vergessen? Tippe unten auf den Link.',genericErr:'Das hat nicht geklappt. Bitte versuch es noch einmal.',logout:'Abmelden',loading:'Lädt …',
  hi:n=>`Hallo ${n}`,next:'Nächste Stunde',nothing:'Noch nichts gebucht',pick:'Such dir einen Termin bei Martin aus',focus:'Fokus',bookAnother:'Weitere buchen',bookLesson:'Stunde buchen',weekDrills:'Deine Übungen',doneOf:(a,b)=>`${a} von ${b} erledigt`,noDrills:'Martin hat dir noch keine Übungen zugewiesen.',openPlan:'Trainingsplan öffnen',hcp:'Handicap',practiceWeek:'Training diese Woche',goal4:'Ziel 4 Std.',h:'Std.',comingUp:'Demnächst',placesLeft:n=>`noch ${n} Plätze`,camp:'Camp',
  book:'Stunde buchen',seg:['Einzel','Gruppe','Camps'],off:'An diesem Tag sind keine Termine frei.',avail:'Verfügbarkeit',availHint:'Tippe auf eine freie Zeit, um sie zu sperren. Tippe auf eine gesperrte Zeit, um sie wieder freizugeben.',stOpen:'frei',stBlocked:'gesperrt',stClosed:'geschlossen',blockDay:'Ganzen Tag sperren',unblockDay:'Tag wieder freigeben',dayBlocked:'Tag gesperrt',dayFreed:'Tag freigegeben',slotBlocked:'Zeit gesperrt',slotFreed:'Zeit freigegeben',weekHours:'Wöchentliche Zeiten',weekHint:'Diese Zeiten sind jede Woche buchbar. Tippe Stunden an oder ab.',editWeek:'Wöchentliche Zeiten bearbeiten',days7:['So','Mo','Di','Mi','Do','Fr','Sa'],bookings:'Buchungen',cancelBk:'Stornieren',cancelConfirm:'Wirklich stornieren? Tippe nochmal zum Bestätigen.',bkCancelled:'Buchung storniert',bookFor:'Stunde für einen Schüler eintragen',lessonType:'Stunde',bookIt:'Eintragen',bookedFor:n=>`Für ${n} eingetragen`,delGroup:'Löschen',groupDeleted:'Gruppentraining gelöscht',done:'Fertig',where:'Range & Kurzspielbereich',with:'Mit',choose:'Termin wählen',bookAt:(s,p)=>`${s} Uhr buchen · ${p}`,yours:'Deine Stunden',cancel:'Stornieren',noCancel:'Stornierung nur bis 24 Std. vorher',none:'Keine anstehenden Stunden.',policy:'Kostenlose Stornierung bis 24 Stunden vorher.',at:'Uhr',
  booked:(d,s)=>`Gebucht: ${d}, ${s} Uhr`,cancelled:'Stunde storniert',slotGone:'Dieser Termin ist gerade weg. Bitte wähle einen anderen.',
@@ -280,7 +281,7 @@ de:{tabs:['Start','Buchen','Plan','Fortschritt','Reisen'],ctabs:['Heute','Schül
  profile:'Profil',save:'Speichern',saved:'Gespeichert',goalHcp:'Ziel-Handicap',language:'Sprache',pro:'Golfprofessional · Coach'},
 en:{tabs:['Home','Book','Plan','Progress','Trips'],ctabs:['Today','Clients','Calendar','Plans','Camps'],coachView:'Coach view',
  login:'Log in',signup:'Sign up',welcome:'Welcome',welcomeSub:'Book lessons, train with your plan and track your progress.',name:'First and last name',phone:'Mobile number',club:'Home club (optional)',email:'Email',password:'Password (min. 8 characters)',
- consent:'I agree that Martin Stanic stores my name, mobile number and email to contact me about training and bookings. I can withdraw this anytime by message.',needConsent:'Please tick the consent box.',confirmMail:'Almost done: we sent you an email. Please confirm your address, then log in.',badLogin:'Email or password is wrong.',genericErr:'That didn’t work. Please try again.',logout:'Log out',loading:'Loading …',
+ consent:'I agree that Martin Stanic stores my name, mobile number and email to contact me about training and bookings. I can withdraw this anytime by message.',needConsent:'Please tick the consent box.',confirmMail:'Almost done: we sent you an email. Please confirm your address, then log in.',badLogin:'Email or password is wrong. Forgot it? Tap the link below.',genericErr:'That didn’t work. Please try again.',logout:'Log out',loading:'Loading …',
  hi:n=>`Hi ${n}`,next:'Next lesson',nothing:'Nothing booked',pick:'Pick a time with Martin',focus:'Focus',bookAnother:'Book another',bookLesson:'Book a lesson',weekDrills:'Your drills',doneOf:(a,b)=>`${a} of ${b} done`,noDrills:'Martin hasn’t assigned you any drills yet.',openPlan:'Open training plan',hcp:'Handicap',practiceWeek:'Practice this week',goal4:'Goal 4 h',h:'h',comingUp:'Coming up',placesLeft:n=>`${n} places left`,camp:'Camp',
  book:'Book a lesson',seg:['Private','Group','Camps'],off:'No times available on this day.',avail:'Availability',availHint:'Tap an open time to block it. Tap a blocked time to open it again.',stOpen:'open',stBlocked:'blocked',stClosed:'closed',blockDay:'Block whole day',unblockDay:'Open day again',dayBlocked:'Day blocked',dayFreed:'Day opened',slotBlocked:'Time blocked',slotFreed:'Time opened',weekHours:'Weekly hours',weekHint:'These times are bookable every week. Tap hours on or off.',editWeek:'Edit weekly hours',days7:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],bookings:'Bookings',cancelBk:'Cancel',cancelConfirm:'Really cancel? Tap again to confirm.',bkCancelled:'Booking cancelled',bookFor:'Book a lesson for a client',lessonType:'Lesson',bookIt:'Book',bookedFor:n=>`Booked for ${n}`,delGroup:'Delete',groupDeleted:'Group session deleted',done:'Done',where:'Range & short game area',with:'With',choose:'Choose a time',bookAt:(s,p)=>`Book ${s} · ${p}`,yours:'Your lessons',cancel:'Cancel',noCancel:'Cancel only up to 24 h before',none:'No upcoming lessons.',policy:'Free cancellation up to 24 hours before.',at:'',
  booked:(d,s)=>`Booked ${d} at ${s}`,cancelled:'Lesson cancelled',slotGone:'That time was just taken. Please pick another.',
@@ -702,8 +703,33 @@ function renderAuth(msg=''){
    ${su?`<label class="check"><input type="checkbox" id="fConsent"><span>${t('consent')}</span></label>`:''}
    <p class="err" id="authErr"></p>
    <button class="btn" id="authBtn">${su?t('signup'):t('login')}</button>
+   ${su?'':`<button type="button" class="linkbtn" id="forgotBtn">${L==='de'?'Passwort vergessen?':'Forgot your password?'}</button>`}
   </form>`;
+  const fb=$('#forgotBtn');if(fb)fb.onclick=()=>renderForgot($('#fEmail').value.trim());
 }
+const APP_URL=()=>location.origin+location.pathname;
+function renderForgot(email='',msg=''){const de=L==='de';
+  view.hidden=true;$('#tabs').hidden=true;$('#avBtn').hidden=true;auth.hidden=false;
+  auth.innerHTML=`<h2>${de?'Passwort vergessen?':'Forgot your password?'}</h2><p class="mute" style="margin:0 0 16px">${de?'Gib deine E-Mail-Adresse ein. Wir schicken dir einen Link, mit dem du ein neues Passwort festlegen kannst.':'Enter your email address. We will send you a link to set a new password.'}</p>${msg}
+  <form id="forgotForm" novalidate><label class="field">${t('email')}<input id="rEmail" type="email" autocomplete="email" value="${esc(email)}" required></label><p class="err" id="rErr"></p>
+  <button class="btn" id="rBtn">${de?'Link senden':'Send link'}</button><button type="button" class="linkbtn" id="rBack">${de?'Zurück zur Anmeldung':'Back to log in'}</button></form>`;
+  $('#rBack').onclick=()=>{S.authMode='login';renderAuth()};
+  $('#forgotForm').onsubmit=async e=>{e.preventDefault();const em=$('#rEmail').value.trim();if(!/.+@.+\..+/.test(em)){$('#rErr').textContent=de?'Bitte gib eine gültige E-Mail-Adresse ein.':'Please enter a valid email address.';return}
+    const b=$('#rBtn');b.disabled=true;const {error}=await sb.auth.resetPasswordForEmail(em,{redirectTo:APP_URL()});b.disabled=false;
+    if(error&&/rate|seconds/i.test(error.message)){$('#rErr').textContent=de?'Bitte warte kurz und versuche es dann noch einmal.':'Please wait a moment and try again.';return}
+    renderForgot(em,`<div class="ok">${de?'Wenn es ein Konto mit dieser Adresse gibt, ist jetzt eine E-Mail unterwegs. Öffne den Link darin auf diesem Gerät, um ein neues Passwort festzulegen.':'If an account exists for this address, an email is on its way. Open the link in it on this device to set a new password.'}</div>`)}}
+function renderNewPass(msg=''){const de=L==='de';
+  view.hidden=true;$('#tabs').hidden=true;$('#avBtn').hidden=true;auth.hidden=false;
+  auth.innerHTML=`<h2>${de?'Neues Passwort':'New password'}</h2><p class="mute" style="margin:0 0 16px">${de?'Wähle ein neues Passwort mit mindestens 8 Zeichen.':'Choose a new password with at least 8 characters.'}</p>${msg}
+  <form id="npForm" novalidate><label class="field">${de?'Neues Passwort':'New password'}<input id="np1" type="password" autocomplete="new-password" minlength="8" required></label>
+  <label class="field">${de?'Passwort wiederholen':'Repeat password'}<input id="np2" type="password" autocomplete="new-password" minlength="8" required></label><p class="err" id="npErr"></p>
+  <button class="btn" id="npBtn">${de?'Passwort speichern':'Save password'}</button></form>`;
+  $('#npForm').onsubmit=async e=>{e.preventDefault();const a=$('#np1').value,b2=$('#np2').value,er=$('#npErr');
+    if(a.length<8){er.textContent=de?'Mindestens 8 Zeichen, bitte.':'At least 8 characters, please.';return}
+    if(a!==b2){er.textContent=de?'Die Passwörter stimmen nicht überein.':'The passwords do not match.';return}
+    const b=$('#npBtn');b.disabled=true;const {error}=await sb.auth.updateUser({password:a});b.disabled=false;
+    if(error){er.textContent=/different|same/i.test(error.message)?(de?'Bitte wähle ein anderes Passwort als vorher.':'Please choose a different password from before.'):(de?'Der Link ist abgelaufen. Bitte fordere einen neuen an.':'The link has expired. Please request a new one.');return}
+    S.recovery=false;history.replaceState(null,'',APP_URL());toast(de?'Passwort geändert':'Password changed');boot()}}
 async function submitAuth(){
   const err=$('#authErr');err.textContent='';const btn=$('#authBtn');
   const email=$('#fEmail').value.trim(),password=$('#fPass').value;
@@ -712,7 +738,7 @@ async function submitAuth(){
     if(!full_name||!phone||!email||password.length<8){err.textContent=L==='de'?'Bitte alle Pflichtfelder ausfüllen (Passwort mind. 8 Zeichen).':'Please fill in all required fields (password min. 8 characters).';return}
     if(!$('#fConsent').checked){err.textContent=t('needConsent');return}
     btn.disabled=true;
-    const {data,error}=await sb.auth.signUp({email,password,options:{data:{full_name,phone,home_club,language:L,consent:'true'}}});
+    const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:APP_URL(),data:{full_name,phone,home_club,language:L,consent:'true'}}});
     btn.disabled=false;
     if(error){err.textContent=error.message.includes('registered')?(L==='de'?'Diese E-Mail ist schon registriert. Bitte melde dich an.':'This email is already registered. Please log in.'):t('genericErr');return}
     if(!data.session){S.authMode='login';renderAuth(`<div class="ok">${t('confirmMail')}</div>`);return}
@@ -720,7 +746,9 @@ async function submitAuth(){
     btn.disabled=true;
     const {error}=await sb.auth.signInWithPassword({email,password});
     btn.disabled=false;
-    if(error){err.textContent=t('badLogin');return}
+    if(error){if(/not confirmed/i.test(error.message)||error.code==='email_not_confirmed'){err.innerHTML=(L==='de'?'Bitte bestätige zuerst deine E-Mail-Adresse. ':'Please confirm your email address first. ')+`<button type="button" class="linkbtn" id="resendBtn" style="display:inline;padding:0">${L==='de'?'E-Mail erneut senden':'Send email again'}</button>`;
+      $('#resendBtn').onclick=async()=>{await sb.auth.resend({type:'signup',email,options:{emailRedirectTo:APP_URL()}});err.textContent=L==='de'?'E-Mail ist unterwegs. Bitte schau auch im Spam-Ordner nach.':'Email sent. Please check your spam folder too.'};return}
+      err.textContent=t('badLogin');return}
   }
 }
 
@@ -1051,7 +1079,7 @@ $('#lang').addEventListener('click',async e=>{const b=e.target.closest('[data-la
   if(S.me){sb.from('profiles').update({language:L}).eq('id',S.me.id).then(()=>{});render(true)}else renderAuth()});
 $('#avBtn').onclick=profileSheet;
 auth.addEventListener('click',e=>{const b=e.target.closest('[data-am]');if(b){S.authMode=b.dataset.am;renderAuth()}});
-auth.addEventListener('submit',e=>{e.preventDefault();submitAuth().catch(fail)});
+auth.addEventListener('submit',e=>{e.preventDefault();if(e.target.id==='authForm')submitAuth().catch(fail)});
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b)go(b.dataset.tab)});
 async function loadTaken(){const days=new Date();days.setHours(0,0,0,0);D.taken=await q(sb.rpc('taken_slots',{from_ts:days.toISOString(),to_ts:new Date(days.getTime()+11*864e5).toISOString()}))}
 view.addEventListener('click',async e=>{
@@ -1115,12 +1143,13 @@ view.addEventListener('submit',async e=>{e.preventDefault();const fm=e.target;co
 
 /* ---------- boot ---------- */
 async function boot(){
+  if(S.recovery||/type=recovery/.test(location.hash)){S.recovery=true;chrome();renderNewPass();return}
   try{await loadMe()}catch(e){S.me=null}
   if(!S.me){chrome();renderAuth();return}
   if(!S.coach&&(S.me.approved===false||S.me.declined)){renderPending();return}
   S.tab='home';await go('home');checkBadges();
 }
-sb.auth.onAuthStateChange((ev)=>{if(ev==='SIGNED_IN'||ev==='SIGNED_OUT')setTimeout(boot,0)});
+sb.auth.onAuthStateChange((ev)=>{if(ev==='PASSWORD_RECOVERY'){S.recovery=true;setTimeout(()=>renderNewPass(),0);return}if(ev==='SIGNED_IN'||ev==='SIGNED_OUT')setTimeout(boot,0)});
 chrome();boot();
 }
 </script>
